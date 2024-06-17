@@ -1,24 +1,40 @@
-import React, { useState } from 'react';
-import Navbar from '../components/Common/Navbar';
-import Footer from '../components/Common/Footer';
-import UploadResume from '../components/Dashboard/UploadResume';
-import JobDescription from '../components/Dashboard/JobDescription';
-import GeneratedResume from '../components/Dashboard/GeneratedResume';
-import AnimatedButton from '../components/Common/AnimatedButton';
-// import { Document, Page } from 'react-pdf';
-// import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
-// import 'react-pdf/dist/esm/Document/Document.css';
+import React, { useEffect, useState } from "react";
+import Navbar from "../components/Common/Navbar";
+import Footer from "../components/Common/Footer";
+import UploadResume from "../components/Dashboard/UploadResume";
+import JobDescription from "../components/Dashboard/JobDescription";
+import GeneratedResume from "../components/Dashboard/GeneratedResume";
+import AnimatedButton from "../components/Common/AnimatedButton";
+import { uploadFileToServer } from "../services/api";
+import { useContract } from "../context/contractContext";
 
 const Dashboard = () => {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [numPages, setNumPages] = useState<number | null>(null);
-  const [jobDescription, setJobDescription] = useState('');
+  const [jobDescription, setJobDescription] = useState("");
   const [generatedResume, setGeneratedResume] = useState<string | null>(null);
 
+  const { generateResumeContent } = useContract();
+
   const handleGenerateResume = async () => {
-    // Logic to handle resume generation
-    setGeneratedResume('Generated resume content...');
+    setGeneratedResume("Generated resume content...");
+    generateResumeContent(jobDescription);
   };
+
+  useEffect(() => {
+    const uploadFile = async () => {
+      if (resumeFile) {
+        try {
+          const response = await uploadFileToServer(resumeFile);
+          console.log(response);
+        } catch (err) {
+          console.log("Error uploading file:", err);
+        }
+      }
+    };
+
+    uploadFile();
+  }, [resumeFile]);
 
   const onDocumentLoadSuccess = () => {
     setNumPages(numPages);
@@ -32,20 +48,14 @@ const Dashboard = () => {
           <div className="w-1/2 bg-white p-6 rounded shadow-md mr-4">
             <UploadResume onFileUpload={setResumeFile} />
             <JobDescription onDescriptionChange={setJobDescription} />
-            <AnimatedButton text="Generate Resume" onClick={handleGenerateResume} />
+            <AnimatedButton
+              text="Generate Resume"
+              onClick={handleGenerateResume}
+            />
             {generatedResume && <GeneratedResume content={generatedResume} />}
           </div>
           <div className="w-1/2 bg-white p-6 rounded shadow-md">
-            {/* {resumeFile && (
-              <Document
-                file={URL.createObjectURL(resumeFile)}
-                onLoadSuccess={onDocumentLoadSuccess}
-              >
-                {Array.from(new Array(numPages), (el, index) => (
-                  <Page key={`page_${index + 1}`} pageNumber={index + 1} />
-                ))}
-              </Document>
-            )} */}
+            {/* Render resume content or other components here */}
           </div>
         </div>
       </main>

@@ -14,7 +14,7 @@ module.exports = {
   networks: {
     galadrielDev: {
       url: "https://devnet.galadriel.com",
-      accounts: [process.env.REACT_APP_PRIVATE_KEY].filter(Boolean), // Ensures the key is not undefined
+      accounts: [process.env.REACT_APP_PRIVATE_KEY].filter(Boolean),
       gas: 100,
       gasPrice: 5000000000,
       timeout: 30000,
