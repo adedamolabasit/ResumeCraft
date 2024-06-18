@@ -12,4 +12,4 @@ ORACLE_ABI_PATH = os.getenv(
     "ORACLE_ABI_PATH",
     "../oracles/abi/ChatOracle.json",
 )
-MAX_DOCUMENT_SIZE_MB = 10
+MAX_DOCUMENT_SIZE_MB = 100

@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/Users/mac/resumeCraft/resume_craft/contracts/ChatGpt.sol": {
-      "lastModificationDate": 1718644773796,
-      "contentHash": "0a2c979642e8aa1bc5e279c62bd2aeca",
+      "lastModificationDate": 1718683663410,
+      "contentHash": "0af43ba9062a64088c9f4742cd92f819",
       "sourceName": "contracts/ChatGpt.sol",
       "solcConfig": {
         "version": "0.8.24",

@@ -51,7 +51,7 @@ def _request_indexing(cid: str) -> Optional[int]:
 
 
 def _wait_for_indexing(
-    request_id: int, cid: str, max_loops: int = 120
+    request_id: int, cid: str, max_loops: int = 1200000
 ) -> KnowledgeBaseIndexingResponse:
     print("Waiting for indexing to complete...", end="", flush=True)
     for _ in range(max_loops):

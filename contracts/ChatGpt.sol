@@ -114,7 +114,7 @@ contract ChatGpt {
         uint runId,
         string [] memory documents,
         string memory /*errorMessage*/
-    ) public onlyOracle {
+    ) public onlyOwner {
         console.log("onOracleKnowledgeBaseQueryResponse called for runId:", runId);
 
         ChatRun storage run = chatRuns[runId];
