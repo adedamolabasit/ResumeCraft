@@ -5,6 +5,7 @@ pragma solidity ^0.8.9;
 import "hardhat/console.sol";
 import "./interfaces/IOracle.sol";
 
+
 contract ChatGpt {
 
     struct Message {
@@ -28,11 +29,11 @@ contract ChatGpt {
     string public knowledgeBase;
 
     event OracleAddressUpdated(address indexed newOracleAddress);
+    event knowledgeBaseUpdated(string indexed   knowledgeBase );
 
-    constructor(address initialOracleAddress, string memory knowledgeBaseCID) {
+    constructor(address initialOracleAddress) {
         owner = msg.sender;
         oracleAddress = initialOracleAddress;
-        knowledgeBase = knowledgeBaseCID;
     }
 
     modifier onlyOwner() {
@@ -48,6 +49,11 @@ contract ChatGpt {
     function setOracleAddress(address newOracleAddress) public onlyOwner {
         oracleAddress = newOracleAddress;
         emit OracleAddressUpdated(newOracleAddress);
+    }
+
+    function setKnowledgeCid(string memory knowledgeBaseCID) public onlyOwner {
+        knowledgeBase = knowledgeBaseCID;
+        emit knowledgeBaseUpdated(knowledgeBase);
     }
 
     function startChat(string memory message) public returns (uint i) {

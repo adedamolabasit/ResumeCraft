@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/Users/mac/resumeCraft/resume_craft/contracts/ChatGpt.sol": {
-      "lastModificationDate": 1718683663410,
-      "contentHash": "0af43ba9062a64088c9f4742cd92f819",
+      "lastModificationDate": 1718917855728,
+      "contentHash": "8b8dbbebf238384a256af7630799dc50",
       "sourceName": "contracts/ChatGpt.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -41,7 +41,7 @@
       ]
     },
     "/Users/mac/resumeCraft/resume_craft/contracts/interfaces/IOracle.sol": {
-      "lastModificationDate": 1718510130202,
+      "lastModificationDate": 1718830500564,
       "contentHash": "b8fcef423599aa48e85445aa6e811dcd",
       "sourceName": "contracts/interfaces/IOracle.sol",
       "solcConfig": {
@@ -113,7 +113,7 @@
       ]
     },
     "/Users/mac/resumeCraft/resume_craft/contracts/interfaces/IChatGpt.sol": {
-      "lastModificationDate": 1718510130200,
+      "lastModificationDate": 1718830500564,
       "contentHash": "20a77353a0bbebe6540af72503cac9ad",
       "sourceName": "contracts/interfaces/IChatGpt.sol",
       "solcConfig": {

@@ -1,50 +1,36 @@
-import { useState, useContext, createContext, useRef, useEffect } from "react";
+import { useState, useContext, createContext, useEffect } from "react";
 import Web3 from "web3";
 import abi from "../contractFIle/ChatGpt.json";
 
 const ContractContext = createContext();
 
 export const ContractProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [userData, setUserData] = useState(null);
-  const [walletAddress, setWalletAddress] = useState(null);
-  const walletAddressRef = useRef(null);
+  const [walletAddress, setWalletAddress] = useState(localStorage.getItem("walletAddress"));
   const [contractInstance, setContractInstance] = useState(null);
   const [chatId, setChatId] = useState(null); // State to store chatId
 
   const web3 = new Web3(window.ethereum);
-  const walletAddress1 = "0x48C3762fF86e96559b5C09047b1Df5882160eB4C";
-  const galadrielContractAddress = process.env.REACT_APP_CONTRACT_ADDRESS;
+  const contractAddress = process.env.REACT_APP_CONTRACT_ADDRESS;
 
   useEffect(() => {
-    if (galadrielContractAddress && abi) {
-      console.log("Initializing contract instance...");
+    if (contractAddress && abi) {
       try {
-        const instance = new web3.eth.Contract(
-          abi.abi,
-          galadrielContractAddress
-        );
+        const instance = new web3.eth.Contract(abi.abi, contractAddress);
         setContractInstance(instance);
-        console.log("Contract instance initialized:", instance);
       } catch (error) {
         console.error("Error initializing contract instance:", error);
       }
-    } else {
-      console.error("Contract address or ABI not found");
     }
-  }, [galadrielContractAddress]);
+  }, [contractAddress]);
 
   useEffect(() => {
     if (contractInstance) {
-      console.log("Setting up event listener...");
       try {
-        if (contractInstance.events) {
-          const subscription = contractInstance.events
-            .ChatCreated({
-              fromBlock: "latest",
-            })
+        if (contractInstance.events && contractInstance.events.ChatCreated) {
+          const subscription = contractInstance.events.ChatCreated({
+            fromBlock: "latest",
+          })
             .on("data", (event) => {
-              console.log("ChatCreated event detected:", event);
               const { chatId } = event.returnValues;
               setChatId(chatId); // Save chatId to state
             })
@@ -52,7 +38,6 @@ export const ContractProvider = ({ children }) => {
               console.error("Error listening to ChatCreated event:", error);
             });
 
-          // Cleanup function to unsubscribe when component unmounts
           return () => {
             subscription.unsubscribe((error, success) => {
               if (success) {
@@ -63,28 +48,13 @@ export const ContractProvider = ({ children }) => {
             });
           };
         } else {
-          console.error(
-            "Events property is not available on the contract instance"
-          );
+          console.error("ChatCreated event is not available on the contract instance");
         }
       } catch (error) {
         console.error("Error setting up event listener:", error);
       }
-    } else {
-      console.log("Contract instance not available yet.");
     }
   }, [contractInstance]);
-
-  useEffect(() => {
-    const run = async () => {
-      if (chatId) {
-        console.log("hey");
-        const a = await triggerOracleFunction(chatId);
-        console.log(a, "ooo");
-      }
-    };
-    run();
-  }, chatId);
 
   const connectToWallet = async () => {
     if (window.ethereum) {
@@ -103,20 +73,49 @@ export const ContractProvider = ({ children }) => {
   };
 
   const disconnectWallet = async () => {
-    try {
-      if (web3.currentProvider && web3.currentProvider.close) {
-        await web3.currentProvider.close();
-        setWalletAddress(null);
-        walletAddressRef.current = null;
-        localStorage.removeItem("walletAddress");
-      } else {
-        console.warn("Provider does not support disconnecting");
-      }
-    } catch (error) {
-      console.error("Error disconnecting wallet:", error);
+    if (web3.currentProvider && web3.currentProvider.close) {
+      await web3.currentProvider.close();
+      setWalletAddress(null);
+      localStorage.removeItem("walletAddress");
     }
   };
-  let allMessages = [];
+
+  const addResumeToKnowledgeBase = async (cid) => {
+    if (!contractInstance) {
+      console.error("Contract instance is not available");
+      return;
+    }
+  
+    try {
+      const gasPrice = await web3.eth.getGasPrice();
+      const data = contractInstance.methods.setKnowledgeCid(cid).encodeABI();
+      const gasEstimate = await web3.eth.estimateGas({
+        from: walletAddress,
+        to: contractInstance.options.address,
+        data: data
+      });
+  
+      const tx = await web3.eth.sendTransaction({
+        from: walletAddress,
+        to: contractInstance.options.address,
+        data: data,
+        gas: gasEstimate,
+        gasPrice: gasPrice
+      });
+  
+      const receipt = await web3.eth.getTransactionReceipt(tx.transactionHash);
+      const { chatId } = receipt.logs[0].data; // Adjust this based on your contract event structure
+  
+      // Save chatId to state or perform further actions
+      console.log("Transaction details:", tx);
+      console.log("Chat ID:", chatId);
+  
+      return tx;
+    } catch (error) {
+      console.error("Error sending transaction:", error);
+      return error;
+    }
+  };
 
   const generateResumeContent = async (content) => {
     if (!contractInstance) {
@@ -125,19 +124,18 @@ export const ContractProvider = ({ children }) => {
     }
 
     try {
+      const gasPrice = await web3.eth.getGasPrice();
+      const gasEstimate = await contractInstance.methods.startChat(content).estimateGas({ from: walletAddress });
+
       const tx = await contractInstance.methods.startChat(content).send({
-        from: walletAddress1,
-        gas: 500000, // Adjust this value if necessary
-        gasPrice: "20000000000", // 20 Gwei
-        type: 0,
+        from: walletAddress,
+        gas: gasEstimate,
+        gasPrice,
       });
 
       const { chatId } = tx.events.ChatCreated.returnValues;
       setChatId(chatId); // Save chatId to state
-
-      console.log(tx, "ryr");
-      const newMessages = await getNewMessages(chatId, allMessages.length);
-      console.log(newMessages, "chiee.");
+      console.log(tx,"uu")
 
       return tx;
     } catch (error) {
@@ -148,20 +146,11 @@ export const ContractProvider = ({ children }) => {
 
   const getNewMessages = async (chatId, currentMessagesCount) => {
     try {
-      const messagesResponse = await contractInstance.methods
-        .getMessageHistoryContents(chatId)
-        .call({ from: walletAddress1 });
+      const messagesResponse = await contractInstance.methods.getMessageHistoryContents(chatId).call({ from: walletAddress });
+      const rolesResponse = await contractInstance.methods.getMessageHistoryRoles(chatId).call({ from: walletAddress });
 
-      const rolesResponse = await contractInstance.methods
-        .getMessageHistoryRoles(chatId)
-        .call({ from: walletAddress1 });
-
-      const messages = Array.isArray(messagesResponse)
-        ? messagesResponse
-        : [messagesResponse];
-      const roles = Array.isArray(rolesResponse)
-        ? rolesResponse
-        : [rolesResponse];
+      const messages = Array.isArray(messagesResponse) ? messagesResponse : [messagesResponse];
+      const roles = Array.isArray(rolesResponse) ? rolesResponse : [rolesResponse];
 
       const newMessages = [];
       for (let i = currentMessagesCount; i < messages.length; i++) {
@@ -178,31 +167,7 @@ export const ContractProvider = ({ children }) => {
     }
   };
 
-  const triggerOracleFunction = async (chatId) => {
-    if (!contractInstance) {
-      console.error("Contract instance is not available");
-      return;
-    }
 
-    try {
-      const documents = ["Document1", "Document2"]; // Example documents array
-
-      const tx = await contractInstance.methods
-        .onOracleKnowledgeBaseQueryResponse(chatId, documents, "")
-        .send({
-           method: 'eth_requestAccounts',
-          from: walletAddress1 ,
-          gas: 500000, // Adjust gas limit if necessary
-        });
-
-      console.log("Oracle function triggered successfully:", tx);
-      const newMessages = await getNewMessages(chatId, allMessages.length);
-      console.log(newMessages, "bchiee.");
-    } catch (error) {
-      console.error("Error triggering Oracle function:", error);
-      console.log("Error message:", error.message); // Log specific error message
-    }
-  };
   return (
     <ContractContext.Provider
       value={{
@@ -210,6 +175,8 @@ export const ContractProvider = ({ children }) => {
         disconnectWallet,
         generateResumeContent,
         chatId,
+        getNewMessages,
+        addResumeToKnowledgeBase
       }}
     >
       {children}
@@ -218,3 +185,4 @@ export const ContractProvider = ({ children }) => {
 };
 
 export const useContract = () => useContext(ContractContext);
+

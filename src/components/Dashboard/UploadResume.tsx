@@ -1,8 +1,31 @@
-import React from 'react';
+import {useEffect} from 'react';
 import { FaUpload } from 'react-icons/fa';
+import io from 'socket.io-client';
 
 
 const UploadResume:React.FC<any> = ({ onFileUpload }) => {
+
+  const socket = io('http://127.0.0.1:8000/upload');
+
+  useEffect(() => {
+    socket.on('connect', () => {
+        console.log('Connected to WebSocket');
+    });
+
+    socket.on('script_output', (data: any) => {
+        console.log('Script output event received:', data);
+        // Handle the received data (output or error) as needed
+    });
+
+    socket.on('disconnect', () => {
+        console.log('Disconnected from WebSocket');
+    });
+
+    return () => {
+        socket.disconnect(); // Clean up on unmount
+    };
+}, []);
+
   return (
     <div className="mb-4">
       <label className="block mb-2 text-sm font-bold">Upload your resume</label>
