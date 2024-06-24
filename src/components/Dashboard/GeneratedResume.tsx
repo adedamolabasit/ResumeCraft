@@ -2,12 +2,11 @@ import React from "react";
 import { useContract } from "../../context/contractContext";
 
 const GeneratedResume: React.FC<any> = ({ content }) => {
-  const { chatId, getNewMessages, addResumeToKnowledgeBase } = useContract();
+  const { chatId, getNewMessages } = useContract();
 
   const downloadResume = async (cid:string) => {
-    const message = await getNewMessages(1,10);
-  //  const a =  addResumeToKnowledgeBase(cid)
-  //   console.log(a, "utyi");
+    const message = await getNewMessages(0);
+
     console.log(message, "utyi");
   };
 

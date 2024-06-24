@@ -2,10 +2,11 @@
 pragma solidity ^0.8.9;
 
 // Uncomment this line to use console.log
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 import "./interfaces/IOracle.sol";
 
-
+// @title ChatGpt
+// @notice This contract handles chat interactions and integrates with teeML oracle for LLM and knowledge base queries.
 contract ChatGpt {
 
     struct Message {
@@ -19,46 +20,64 @@ contract ChatGpt {
         uint messagesCount;
     }
 
+    
+
+    // @notice Mapping from chat ID to ChatRun
     mapping(uint => ChatRun) public chatRuns;
     uint private chatRunsCount;
 
+    // @notice Event emitted when a new chat is created
     event ChatCreated(address indexed owner, uint indexed chatId);
 
+    // @notice Address of the contract owner
     address private owner;
+    
+    // @notice Address of the oracle contract
     address public oracleAddress;
+    
+    // @notice CID of the knowledge base
     string public knowledgeBase;
 
+    // @notice Event emitted when the oracle address is updated
     event OracleAddressUpdated(address indexed newOracleAddress);
-    event knowledgeBaseUpdated(string indexed   knowledgeBase );
+    event KnowledgeBaseUpdated(string indexed newKnowledgeBaseCID);
 
-    constructor(address initialOracleAddress) {
+    // @param initialOracleAddress Initial address of the oracle contract
+    // @param knowledgeBaseCID CID of the initial knowledge base
+    constructor(address initialOracleAddress, string memory knowledgeBaseCID) {
         owner = msg.sender;
         oracleAddress = initialOracleAddress;
+        knowledgeBase = knowledgeBaseCID;
     }
 
+    // @notice Ensures the caller is the contract owner
     modifier onlyOwner() {
         require(msg.sender == owner, "Caller is not owner");
         _;
     }
 
+    // @notice Ensures the caller is the oracle contract
     modifier onlyOracle() {
         require(msg.sender == oracleAddress, "Caller is not oracle");
         _;
     }
 
+    // @notice Sets a new oracle address
+    // @param newOracleAddress The new oracle address
     function setOracleAddress(address newOracleAddress) public onlyOwner {
         oracleAddress = newOracleAddress;
         emit OracleAddressUpdated(newOracleAddress);
     }
-
-    function setKnowledgeCid(string memory knowledgeBaseCID) public onlyOwner {
-        knowledgeBase = knowledgeBaseCID;
-        emit knowledgeBaseUpdated(knowledgeBase);
+    function setKnowledgeBaseCid(string memory cid) public onlyOwner {
+        require(bytes(cid).length > 0, "CID cannot be empty");
+        knowledgeBase = cid;
+        emit KnowledgeBaseUpdated(cid);
     }
 
-    function startChat(string memory message) public returns (uint i) {
-        console.log("startChat called with message:", message);
-        
+    // @notice Starts a new chat
+    // @param message The initial message to start the chat with
+    // @return The ID of the newly created chat
+    function startChat(string memory message) public returns (uint) {
         ChatRun storage run = chatRuns[chatRunsCount];
 
         run.owner = msg.sender;
@@ -69,13 +88,10 @@ contract ChatGpt {
         run.messagesCount = 1;
 
         uint currentId = chatRunsCount;
-        chatRunsCount = chatRunsCount + 1;
-
-        console.log("New chat run created with ID:", currentId);
+        chatRunsCount++;
 
         // If there is a knowledge base, create a knowledge base query
         if (bytes(knowledgeBase).length > 0) {
-            console.log("Creating knowledge base query");
             IOracle(oracleAddress).createKnowledgeBaseQuery(
                 currentId,
                 knowledgeBase,
@@ -84,23 +100,22 @@ contract ChatGpt {
             );
         } else {
             // Otherwise, create an LLM call
-            console.log("Creating LLM call");
             IOracle(oracleAddress).createLlmCall(currentId);
         }
-        
         emit ChatCreated(msg.sender, currentId);
-        console.log("ChatCreated event emitted for chat ID:", currentId);
 
         return currentId;
     }
 
+    // @notice Handles the response from the oracle for an LLM call
+    // @param runId The ID of the chat run
+    // @param response The response from the oracle
+    // @dev Called by teeML oracle
     function onOracleLlmResponse(
         uint runId,
         string memory response,
         string memory /*errorMessage*/
     ) public onlyOracle {
-        console.log("onOracleLlmResponse called for runId:", runId);
-        
         ChatRun storage run = chatRuns[runId];
         require(
             keccak256(abi.encodePacked(run.messages[run.messagesCount - 1].role)) == keccak256(abi.encodePacked("user")),
@@ -112,17 +127,17 @@ contract ChatGpt {
         newMessage.role = "assistant";
         run.messages.push(newMessage);
         run.messagesCount++;
-        
-        console.log("Assistant response added to runId:", runId);
     }
 
+    // @notice Handles the response from the oracle for a knowledge base query
+    // @param runId The ID of the chat run
+    // @param documents The array of retrieved documents
+    // @dev Called by teeML oracle
     function onOracleKnowledgeBaseQueryResponse(
         uint runId,
-        string [] memory documents,
+        string[] memory documents,
         string memory /*errorMessage*/
-    ) public onlyOwner {
-        console.log("onOracleKnowledgeBaseQueryResponse called for runId:", runId);
-
+    ) public onlyOracle {
         ChatRun storage run = chatRuns[runId];
         require(
             keccak256(abi.encodePacked(run.messages[run.messagesCount - 1].role)) == keccak256(abi.encodePacked("user")),
@@ -147,15 +162,14 @@ contract ChatGpt {
         // Finally, set the lastMessage content to the newly constructed string
         lastMessage.content = newContent;
 
-        console.log("Context added to the last message for runId:", runId);
-
         // Call LLM
         IOracle(oracleAddress).createLlmCall(runId);
     }
 
+    // @notice Adds a new message to an existing chat run
+    // @param message The new message to add
+    // @param runId The ID of the chat run
     function addMessage(string memory message, uint runId) public {
-        console.log("addMessage called with message:", message, "for runId:", runId);
-
         ChatRun storage run = chatRuns[runId];
         require(
             keccak256(abi.encodePacked(run.messages[run.messagesCount - 1].role)) == keccak256(abi.encodePacked("assistant")),
@@ -170,12 +184,8 @@ contract ChatGpt {
         newMessage.role = "user";
         run.messages.push(newMessage);
         run.messagesCount++;
-        
-        console.log("New user message added to runId:", runId);
-
         // If there is a knowledge base, create a knowledge base query
         if (bytes(knowledgeBase).length > 0) {
-            console.log("Creating knowledge base query for new user message in runId:", runId);
             IOracle(oracleAddress).createKnowledgeBaseQuery(
                 runId,
                 knowledgeBase,
@@ -184,11 +194,14 @@ contract ChatGpt {
             );
         } else {
             // Otherwise, create an LLM call
-            console.log("Creating LLM call for new user message in runId:", runId);
             IOracle(oracleAddress).createLlmCall(runId);
         }
     }
 
+    // @notice Retrieves the message history contents of a chat run
+    // @param chatId The ID of the chat run
+    // @return An array of message contents
+    // @dev Called by teeML oracle
     function getMessageHistoryContents(uint chatId) public view returns (string[] memory) {
         string[] memory messages = new string[](chatRuns[chatId].messages.length);
         for (uint i = 0; i < chatRuns[chatId].messages.length; i++) {
@@ -197,6 +210,10 @@ contract ChatGpt {
         return messages;
     }
 
+    // @notice Retrieves the roles of the messages in a chat run
+    // @param chatId The ID of the chat run
+    // @return An array of message roles
+    // @dev Called by teeML oracle
     function getMessageHistoryRoles(uint chatId) public view returns (string[] memory) {
         string[] memory roles = new string[](chatRuns[chatId].messages.length);
         for (uint i = 0; i < chatRuns[chatId].messages.length; i++) {

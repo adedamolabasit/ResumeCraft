@@ -1,37 +1,26 @@
 import { useState, useContext, createContext, useEffect } from "react";
 import Web3 from "web3";
-import abi from "../contractFIle/ResumeCraftAgent.json";
+import abi from "../contractFIle/ChatGpt.json";
 
 const ContractContext = createContext();
 
 export const ContractProvider = ({ children }) => {
   const [walletAddress, setWalletAddress] = useState(localStorage.getItem("walletAddress"));
   const [contractInstance, setContractInstance] = useState(null);
-  const [chatId, setChatId] = useState(null);
-  const [cid, setCid] = useState(null);
-  const [logs, setLogs] = useState([]);
-  const [canProceed, setCanProceed] = useState(false);
+  const [chatId, setChatId] = useState(null); // State to store chatId
+  const [cid, setCid] = useState(null); // State to store chatId
+  const [logs, setLogs] = useState([]); // State to store chatId
 
   const web3 = new Web3(window.ethereum);
-  const contractAddress = "0xDFf6BC4c64295d0Fd85ED11d5433772D9eD297aD";
+  const contractAddress = process.env.REACT_APP_CONTRACT_ADDRESS;
+
 
   useEffect(() => {
-    const processResume = async () => {
-      if (cid) {
-        try {
-          const resumeFileCid = await addResumeToKnowledgeBase(cid);
-          if (resumeFileCid !== "" && cid) {
-            setCanProceed(true);
-          }
-          console.log((resumeFileCid !== "") & cid);
-        } catch (error) {
-          console.error("Error adding resume to knowledge base:", error);
-        }
-      }
-    };
-
-    processResume();
-  }, [cid]);
+    if (cid){
+      const a = addResumeToKnowledgeBase(cid)
+      console.log(a)
+    }
+  })
 
   useEffect(() => {
     if (contractAddress && abi) {
@@ -48,13 +37,12 @@ export const ContractProvider = ({ children }) => {
     if (contractInstance) {
       try {
         if (contractInstance.events && contractInstance.events.ChatCreated) {
-          const subscription = contractInstance.events
-            .ChatCreated({
-              fromBlock: "latest",
-            })
+          const subscription = contractInstance.events.ChatCreated({
+            fromBlock: "latest",
+          })
             .on("data", (event) => {
               const { chatId } = event.returnValues;
-              setChatId(chatId);
+              setChatId(chatId); // Save chatId to state
             })
             .on("error", (error) => {
               console.error("Error listening to ChatCreated event:", error);
@@ -79,12 +67,13 @@ export const ContractProvider = ({ children }) => {
   }, [contractInstance]);
 
   const handleCid = (cid) => {
-    setCid(cid);
-  };
+    setCid(cid)
+  }
 
   const handleLogsData = (newLogs) => {
     setLogs((prevLogs) => [...prevLogs, ...newLogs]);
   };
+
 
   const connectToWallet = async () => {
     if (window.ethereum) {
@@ -110,86 +99,95 @@ export const ContractProvider = ({ children }) => {
     }
   };
 
-  const generateResumeContent = async (jobDescription) => {
-    if (!contractInstance) {
-      console.error("Contract instance is not available");
-      return;
-    }
-
-    try {
-      const gasPrice = await web3.eth.getGasPrice();
-      const gasEstimate = await contractInstance.methods.runAgent(jobDescription, 4).estimateGas({ from: walletAddress });
-      console.log("Gas Estimate:", gasEstimate);
-
-      const tx = await contractInstance.methods.runAgent(jobDescription, 4).send({
-        from: walletAddress,
-        gas: gasEstimate,
-        gasPrice,
-      });
-
-      const { chatId } = tx.events.AgentRunCreated.returnValues;
-      setChatId(chatId);
-      console.log("Transaction successful:", tx);
-
-      return tx;
-    } catch (error) {
-      console.error("Error sending transaction:", error.message);
-      return error;
-    }
-  };
-
   const addResumeToKnowledgeBase = async (cid) => {
     if (!contractInstance) {
       console.error("Contract instance is not available");
       return;
     }
+  
+    try {
+      const gasPrice = await web3.eth.getGasPrice();
+      const data = contractInstance.methods.setKnowledgeCid(cid).encodeABI();
+      const gasEstimate = await web3.eth.estimateGas({
+        from: walletAddress,
+        to: contractInstance.options.address,
+        data: data
+      });
+  
+      const tx = await web3.eth.sendTransaction({
+        from: walletAddress,
+        to: contractInstance.options.address,
+        data: data,
+        gas: gasEstimate,
+        gasPrice: gasPrice
+      });
+  
+      const receipt = await web3.eth.getTransactionReceipt(tx.transactionHash);
+      const { chatId } = receipt.logs[0].data; // Adjust this based on your contract event structure
+
+      setLogs([`Onchain Transaction successfull, chatId: ${chatId} `])
+  
+      // Save chatId to state or perform further actions
+      console.log("Transaction details:", tx);
+      console.log("Chat ID:", chatId);
+  
+      return tx;
+    } catch (error) {
+      console.error("Error sending transaction:", error);
+      return error;
+    }
+  };
+
+  const generateResumeContent = async (content) => {
+    if (!contractInstance) {
+      console.error("Contract instance is not available");
+      return;
+    }
 
     try {
       const gasPrice = await web3.eth.getGasPrice();
-      console.log("Gas Price:", gasPrice);
+      const gasEstimate = await contractInstance.methods.startChat(content).estimateGas({ from: walletAddress });
 
-      const gasEstimate = await contractInstance.methods.setKnowledgeBaseCid(cid).estimateGas({ from: walletAddress });
-      console.log("Gas Estimate:", gasEstimate);
-
-      const tx = await contractInstance.methods.setKnowledgeBaseCid(cid).send({
+      const tx = await contractInstance.methods.startChat(content).send({
         from: walletAddress,
         gas: gasEstimate,
         gasPrice,
       });
 
+      const { chatId } = tx.events.ChatCreated.returnValues;
+      setChatId(chatId); // Save chatId to state
+      console.log(tx,"uu")
+
       return tx;
     } catch (error) {
-      console.error("Error sending transaction:", error.message);
+      console.error("Error sending transaction:", error);
       return error;
     }
   };
 
-  const getNewMessages = async (chatId) => {
-    if (!contractInstance) {
-      console.error("Contract instance is not available");
-      return [];
-    }
-
+  const getNewMessages = async (chatId, currentMessagesCount) => {
     try {
-      const gasPrice = await web3.eth.getGasPrice();
-      console.log("Gas Price:", gasPrice);
+      const messagesResponse = await contractInstance.methods.getMessageHistoryContents(chatId).call({ from: walletAddress });
+      const rolesResponse = await contractInstance.methods.getMessageHistoryRoles(chatId).call({ from: walletAddress });
 
-      const gasEstimate = await contractInstance.methods.getMessageHistoryContents(chatId).estimateGas({ from: walletAddress });
-      console.log("Gas Estimate:", gasEstimate);
+      const messages = Array.isArray(messagesResponse) ? messagesResponse : [messagesResponse];
+      const roles = Array.isArray(rolesResponse) ? rolesResponse : [rolesResponse];
 
-      const messagesResponse = await contractInstance.methods.getMessageHistoryContents(chatId).call({
-        from: walletAddress,
-        gas: gasEstimate,
-      });
+      const newMessages = [];
+      for (let i = currentMessagesCount; i < messages.length; i++) {
+        newMessages.push({
+          role: roles[i],
+          content: messages[i],
+        });
+      }
 
-      console.log(messagesResponse, "Messages Response");
-
-      return messagesResponse;
+      return newMessages;
     } catch (error) {
-      console.error("Error fetching new messages:", error.message);
+      console.error("Error fetching new messages:", error);
       return [];
     }
   };
+
 
   return (
     <ContractContext.Provider
@@ -202,9 +200,7 @@ export const ContractProvider = ({ children }) => {
         addResumeToKnowledgeBase,
         handleCid,
         handleLogsData,
-        logs,
-        cid,
-        canProceed,
+        logs
       }}
     >
       {children}

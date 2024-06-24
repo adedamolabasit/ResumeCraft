@@ -7,6 +7,7 @@ import GeneratedResume from "../components/Dashboard/GeneratedResume";
 import AnimatedButton from "../components/Common/AnimatedButton";
 import { uploadFileToServer } from "../services/api";
 import { useContract } from "../context/contractContext";
+import LogCard from "../components/Dashboard/LogCard"; // Adjust the import path as needed
 
 const Dashboard = () => {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -14,10 +15,10 @@ const Dashboard = () => {
   const [jobDescription, setJobDescription] = useState("");
   const [generatedResume, setGeneratedResume] = useState<string | null>(null);
 
-  const { generateResumeContent } = useContract();
+  const { generateResumeContent, walletAdress, handleCid, handleLogsData, cid } = useContract();
 
   const handleGenerateResume = async () => {
-    setGeneratedResume("Generated resume content...");
+    setGeneratedResume("Generated resume content");
     generateResumeContent(jobDescription);
   };
 
@@ -25,8 +26,11 @@ const Dashboard = () => {
     const uploadFile = async () => {
       if (resumeFile) {
         try {
-          const response = await uploadFileToServer(resumeFile);
-          console.log(response);
+          handleLogsData(["uploading resume file into knowledge base ..."])
+          const response = await uploadFileToServer(resumeFile, walletAdress);
+          handleLogsData([response.message, response.output])
+          handleLogsData(["Authorize wallet to save resume file onchain "])
+          handleCid(response.cid);
         } catch (err) {
           console.log("Error uploading file:", err);
         }
@@ -55,7 +59,7 @@ const Dashboard = () => {
             {generatedResume && <GeneratedResume content={generatedResume} />}
           </div>
           <div className="w-1/2 bg-white p-6 rounded shadow-md">
-            {/* Render resume content or other components here */}
+            <LogCard />
           </div>
         </div>
       </main>
