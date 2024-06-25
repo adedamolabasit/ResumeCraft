@@ -1,0 +1,129 @@
+"<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #333;
+            background-color: #f9f9f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            width: 60%;
+            background-color: #fff;
+            padding: 40px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        h1 {
+            color: #2E86C1;
+            font-size: 36px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        h2, h3, h4 {
+            color: #1F618D;
+            border-bottom: 2px solid #2E86C1;
+            padding-bottom: 5px;
+            margin-top: 30px;
+            margin-bottom: 10px;
+        }
+        .contact-info {
+            margin-bottom: 30px;
+            font-size: 14px;
+            text-align: center;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .section p {
+            margin: 5px 0;
+        }
+        .section ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .section ul li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>[Your Name]</h1>
+        </div>
+        <div class="contact-info">
+            <p>[City, Country]</p>
+            <p>Phone: +[Phone Number]</p>
+            <p>Email: [Email]</p>
+            <p>GitHub: <a href="[GitHub Link]">www.github.com/[Username]</a></p>
+            <p>Personal Site: <a href="[Personal Site URL]">www.[Personal Site].site</a></p>
+        </div>
+
+        <div class="section">
+            <h2>Objective</h2>
+            <p>[Objective Text]</p>
+        </div>
+
+        <div class="section">
+            <h2>Education</h2>
+            <p><strong>[Degree], [Major]</strong></p>
+            <p>[University Name], [Location]</p>
+            <p>[Graduation Date]</p>
+        </div>
+
+        <div class="section">
+            <h2>Experience</h2>
+            <p><strong>[Job Title], [Company] — [Location]</strong></p>
+            <p>[Start Date] - [End Date]</p>
+            <ul>
+                <li>[Responsibility/Project Description]</li>
+            </ul>
+
+            <p><strong>[Job Title], [Company] — [Location]</strong></p>
+            <p>[Start Date] - [End Date]</p>
+            <ul>
+                <li>[Responsibility/Project Description]</li>
+            </ul>
+
+            <p><strong>[Job Title], [Company] — [Location]</strong></p>
+            <p>[Start Date] - [End Date]</p>
+            <ul>
+                <li>[Responsibility/Project Description]</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Skills</h2>
+            <p><strong>Languages:</strong> [List of Languages]</p>
+            <p><strong>Frameworks:</strong> [List of Frameworks]</p>
+            <p><strong>Database Management:</strong> [List of Databases]</p>
+            <p><strong>Tools:</strong> [List of Tools]</p>
+            <p><strong>Development Practices:</strong> [Development Practices]</p>
+        </div>
+
+        <div class="section">
+            <h2>Awards and Recognitions</h2>
+            <ul>
+                <li>[Award/Recognition]</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Additional Information</h2>
+            <p><strong>Languages:</strong> [Languages]</p>
+            <p><strong>Availability:</strong> [Availability Information]</p>
+        </div>
+    </div>
+</body>
+</html>
+"

@@ -79,10 +79,10 @@ contract ResumeCraftAgent {
         emit KnowledgeBaseUpdated(cid);
     }
 
-    function runAgent(string memory query, uint8 max_iterations)
-        public
-        returns (uint256 i)
-    {
+    function runAgent(
+        string memory query,
+        uint8 max_iterations
+    ) public returns (uint256 i) {
         AgentRun storage run = agentRuns[agentRunCount];
 
         run.owner = msg.sender;
@@ -110,8 +110,9 @@ contract ResumeCraftAgent {
                 currentId,
                 knowledgeBase,
                 query,
-                1
+                2
             );
+            emit AgentRunCreated(run.owner, currentId);
         } else {
             IOracle(oracleAddress).createOpenAiLlmCall(currentId, config);
             emit AgentRunCreated(run.owner, currentId);
@@ -153,25 +154,33 @@ contract ResumeCraftAgent {
                 // Prompt to add necessary fonts, color, layout for PDF import
                 Message memory newMessage;
                 newMessage
-                    .content = "Please add the necessary fonts, colors, and layout to make this ATS-friendly resume ready for PDF import.";
+                    .content = "Please convert the generated resume into a single-page HTML and CSS resume format. The resume should have a professional layout with fonts, colors, and a beautiful background that follows ATS (Applicant Tracking System) standards. Ensure the design is visually appealing, easy to read, and highlights the key sections such as contact information, professional summary, skills, experience, education, and any other relevant sections. Include custom styles to enhance the overall presentation while maintaining compatibility with ATS.";
                 newMessage.role = "user";
                 run.messages.push(newMessage);
                 IOracle(oracleAddress).createOpenAiLlmCall(runId, config);
                 return;
             } else if (run.responsesCount == 2) {
-                // Prompt to generate a cover letter with PDF formatting
                 Message memory newMessage;
                 newMessage
-                    .content = "Please generate a cover letter based on the knowledge base, including necessary PDF format background colors suitable for addition to a PDF.";
+                    .content = "Please generate a cover letter based on the provided job description. The cover letter should highlight my suitability for the position, emphasizing my relevant skills and experiences. Include a compelling introduction, detailed body paragraphs that align my qualifications with the job requirements, and a strong conclusion with a clear call to action.";
                 newMessage.role = "user";
                 run.messages.push(newMessage);
                 IOracle(oracleAddress).createOpenAiLlmCall(runId, config);
                 return;
-            } else if (run.responsesCount == 3) {
-                // Prompt to analyze key points in the resume and match percentage with job description
+            }
+             else if (run.responsesCount == 3) {
                 Message memory newMessage;
                 newMessage
-                    .content = "Please analyze the key points in the resume and provide the percentage of experience match to the job description to determine the candidate's fit.";
+                    .content = "Please analyze the key points in the initial resume and provide the percentage of experience match to the job description to determine if the candidate is a good fit for the job. Include any relevant insights and summaries. The specific result should follow this format: analysis:";
+                newMessage.role = "user";
+                run.messages.push(newMessage);
+                IOracle(oracleAddress).createOpenAiLlmCall(runId, config);
+                return;
+            }
+             else if (run.responsesCount == 4) {
+                Message memory newMessage;
+                newMessage
+                    .content = "Please analyze the changes made between the initial resume and the newly generated tailored resume. Provide a percentage of how the new resume was tailored to the job description, highlighting specific changes and improvements. The specific result should follow this format: changes analysis:";
                 newMessage.role = "user";
                 run.messages.push(newMessage);
                 IOracle(oracleAddress).createOpenAiLlmCall(runId, config);
@@ -251,11 +260,9 @@ contract ResumeCraftAgent {
         IOracle(oracleAddress).createOpenAiLlmCall(runId, config);
     }
 
-    function getMessageHistoryContents(uint256 agentId)
-        public
-        view
-        returns (string[] memory)
-    {
+    function getMessageHistoryContents(
+        uint256 agentId
+    ) public view returns (string[] memory) {
         string[] memory messages = new string[](
             agentRuns[agentId].messages.length
         );
@@ -265,11 +272,9 @@ contract ResumeCraftAgent {
         return messages;
     }
 
-    function getMessageHistoryRoles(uint256 agentId)
-        public
-        view
-        returns (string[] memory)
-    {
+    function getMessageHistoryRoles(
+        uint256 agentId
+    ) public view returns (string[] memory) {
         string[] memory roles = new string[](
             agentRuns[agentId].messages.length
         );
@@ -283,11 +288,10 @@ contract ResumeCraftAgent {
         return agentRuns[runId].is_finished;
     }
 
-    function compareStrings(string memory a, string memory b)
-        private
-        pure
-        returns (bool)
-    {
+    function compareStrings(
+        string memory a,
+        string memory b
+    ) private pure returns (bool) {
         return (keccak256(abi.encodePacked((a))) ==
             keccak256(abi.encodePacked((b))));
     }

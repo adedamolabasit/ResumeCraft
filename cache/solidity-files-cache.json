@@ -114,8 +114,8 @@
       ]
     },
     "/Users/mac/resumeCraft/resume_craft/contracts/ResumeCraftAgent.sol": {
-      "lastModificationDate": 1719178579669,
-      "contentHash": "35b3901aff1f638fadd7d41763971bd4",
+      "lastModificationDate": 1719276738645,
+      "contentHash": "b035d95e5fa42a229b3fed8ef4714033",
       "sourceName": "contracts/ResumeCraftAgent.sol",
       "solcConfig": {
         "version": "0.8.24",
