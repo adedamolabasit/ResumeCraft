@@ -14,3 +14,64 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.animate-progress {
+  animation: progress-animation 2s linear infinite;
+}
+
+@keyframes progress-animation {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.resume-content, .cover-letter-content {
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.resume-content h2, .cover-letter-content h2 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 1.5rem;
+}
+
+.resume-content p, .cover-letter-content p {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #666;
+}
+
+.resume-content ul, .cover-letter-content ul {
+  list-style-type: disc;
+  padding-left: 2rem;
+}
+
+.resume-content ul li, .cover-letter-content ul li {
+  margin-bottom: 0.5rem;
+}
+
+.resume-content blockquote, .cover-letter-content blockquote {
+  margin-left: 0;
+  padding-left: 1rem;
+  border-left: 3px solid #666;
+  color: #666;
+}
+
+.resume-content blockquote p, .cover-letter-content blockquote p {
+  margin: 0.5rem 0;
+}
+
+.resume-content a, .cover-letter-content a {
+  color: #1a73e8; /* Adjust link color as needed */
+  text-decoration: none;
+}
+
+.resume-content a:hover, .cover-letter-content a:hover {
+  text-decoration: underline;
+}
+

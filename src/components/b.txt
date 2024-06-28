@@ -1,1 +1,0 @@
-Please analyze the changes made between the initial resume and the newly generated tailored resume. Provide a percentage of how the new resume was tailored to the job description, highlighting specific changes and improvements. The specific result should follow this format: changes analysis:

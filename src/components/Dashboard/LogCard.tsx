@@ -7,17 +7,13 @@ const LogCard: React.FC = () => {
 
   return (
     <div className="bg-black text-white p-4 rounded-lg shadow-lg h-full flex flex-col">
-      {loading ? (
-        <p className="text-start text-lg">Loading...</p>
-      ) : (
-        <ul className="space-y-2 flex-grow overflow-y-auto">
-          {logs.map((log: any, index: any) => (
-            <li key={index} className="p-2 bg-gray-800 rounded-md text-white">
-              {log}
-            </li>
-          ))}
-        </ul>
-      )}
+      <ul className="space-y-2 flex-grow overflow-y-auto">
+        {logs.map((log: any, index: any) => (
+          <li key={index} className="p-2 bg-gray-800 rounded-md text-white">
+            {log}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };

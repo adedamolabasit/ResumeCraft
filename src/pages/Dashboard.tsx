@@ -34,14 +34,21 @@ const Dashboard = () => {
       setJobDescription("");
       try {
         setIsUploading(true);
-        handleLogsData(["Uploading resume file into knowledge base ..."]);
+        handleLogsData(["Uploading files into AI Knowledge base"]);
+        await new Promise(resolve => setTimeout(resolve, 4000));
+        handleLogsData(["please wait..."]);
+        await new Promise(resolve => setTimeout(resolve, 4000));
+        handleLogsData(["Almost there..."]);
         const response = await uploadFileToServer(
           resumeFile,
           walletAdress,
           jobDescription
         );
-        handleLogsData([response.message, response.output]);
-        handleLogsData(["Authorize wallet to save resume file onchain "]);
+        [response.message, response.output].forEach((item) => {
+          handleLogsData([item]);
+        });
+
+        handleLogsData(["Authorize Wallet..."]);
         handleCid(response.cid);
       } catch (err) {
         console.log("Error uploading file:", err);
@@ -53,7 +60,9 @@ const Dashboard = () => {
   useEffect(() => {
     setCanProceed(false);
     if (isFileUpload) {
-      setGeneratedResume("Click the button to use AI and generate a new resume tailored to your job description.");
+      setGeneratedResume(
+        "Click the button to use AI and generate a new resume tailored to your job description."
+      );
       setIsUploading(false);
     }
     if (resumeFile && jobDescription) {
@@ -73,7 +82,7 @@ const Dashboard = () => {
               jobDescription={jobDescription}
             />
             <AnimatedButton
-              text="Generate Resume"
+              text="Upload Documents"
               onClick={uploadFile}
               canProceed={canProceed}
             />

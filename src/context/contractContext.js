@@ -11,23 +11,25 @@ export const ContractProvider = ({ children }) => {
   const [contractInstance, setContractInstance] = useState(null);
   const [runId, setRunId] = useState(null);
   const [cid, setCid] = useState(null);
-  const [logs, setLogs] = useState([]);
+  const [logs, setLogs] = useState(["loading.."]);
   const [canProceed, setCanProceed] = useState(false);
   const [isFileUpload, setIsFileUpload] = useState(false);
   const [resumeData, setResumeData] = useState({});
   const [isResume, setIsResume] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [message, setMessage] = useState();
 
   const web3 = new Web3(window.ethereum);
-  const contractAddress = "0xD5a1e080D1AC8BC700B248db8d7A227Cc2E59395";
+  const contractAddress = "0x3Ab2548b286ac591EDDA2b1814985a478B217517";
 
   useEffect(() => {
     const fetchMessages = async () => {
       const resume = await getNewMessages(2);
       console.log(resume);
       setResumeData({
-        data1: resume.response2, // Adjusted to match the correct object keys
-        data2: resume.response4, // Adjusted to match the correct object keys
-        data3: resume.response6, // Adjusted to match the correct object keys
+        data1: resume.response2, 
+        data2: resume.response4, 
+        data3: resume.response6
       });
       console.log(resumeData, "loe");
     };
@@ -103,7 +105,7 @@ export const ContractProvider = ({ children }) => {
   const generateResumeContent = async () => {
     setIsResume(false);
     const prompt =
-      "Generate a resume based on the provided job description. the resume document should be optimized to be ATS (Applicant Tracking System) friendly.";
+      "Generate a resume based on the provided job description. The resume document should be optimized for Applicant Tracking System (ATS) compatibility. It should include necessary tags to make the display appealing as a professional PDF or DOCX file..";
 
     setIsFileUpload(false);
     if (!contractInstance) {
@@ -114,19 +116,18 @@ export const ContractProvider = ({ children }) => {
     try {
       const gasPrice = await web3.eth.getGasPrice();
       const gasEstimate = await contractInstance.methods
-        .runAgent(prompt, 4)
+        .runAgent(prompt, 6)
         .estimateGas({ from: walletAddress });
       console.log("Gas Estimate:", gasEstimate);
 
-      const tx = await contractInstance.methods.runAgent(prompt, 4).send({
+      const tx = await contractInstance.methods.runAgent(prompt, 6).send({
         from: walletAddress,
         gas: gasEstimate,
         gasPrice,
       });
 
-      console.log("Transaction successful:", tx);
+      setIsGenerating(true);
 
-      // Check if runId is present in tx response
       if (
         tx &&
         tx.events &&
@@ -134,16 +135,13 @@ export const ContractProvider = ({ children }) => {
         tx.events.AgentRunCreated.returnValues
       ) {
         const runId = tx.events.AgentRunCreated.returnValues.runId;
-        console.log("Run ID:", runId);
 
-        // Start checking run status and fetch messages when finished
         await checkRunStatusAndFetchMessages(runId);
       } else {
         console.error(
           "AgentRunCreated event not found in transaction response:",
           tx
         );
-        // Handle case where event is not emitted as expected
       }
 
       return tx;
@@ -176,13 +174,7 @@ export const ContractProvider = ({ children }) => {
         gasPrice,
       });
 
-      console.log("Transaction Response:", tx);
-
-      // Check if the transaction response meets your criteria
       if (tx && tx.blockHash && tx.blockNumber && tx.contractAddress) {
-        // Assuming you want to set a state indicating the transaction was successful
-        // Replace this with your state setting logic
-        // Example:
         setIsFileUpload(true);
         handleLogsData([
           "Successfull",
@@ -191,28 +183,21 @@ export const ContractProvider = ({ children }) => {
           tx.contractAddress,
           tx.gasUsed,
         ]);
-        // setOnChainUploadState({
-        //   success: true,
-        //   txHash: tx.transactionHash,
-        //   blockNumber: tx.blockNumber,
-        //   contractAddress: tx.contractAddress,
-        //   gasUsed: tx.gasUsed,
-        //   // Add more fields as needed
-        // });
       } else {
         console.error("Incomplete transaction response:", tx);
       }
 
-      return tx; // Optionally return the transaction object
+      return tx; 
     } catch (error) {
       console.error("Error sending transaction:", error.message);
-      // Handle error state or throw the error
       return error;
     }
   };
 
   const checkRunStatusAndFetchMessages = async (runId) => {
     let isFinished = false;
+    const message = getNewMessages(runId);
+    console.log(`Fetching messages for runId ${runId}`, message);
 
     while (!isFinished) {
       handleLogsData(["fetching..."]);
@@ -226,17 +211,14 @@ export const ContractProvider = ({ children }) => {
 
         if (isFinished) {
           setIsResume(true);
-          const message = getNewMessages(runId)
-          console.log(message,"lloeo")
+          setIsGenerating(false);
+          const message = getNewMessages(runId);
           console.log(`Fetching messages for runId ${runId}`);
         } else {
-          // Sleep for a few seconds before checking again (optional)
           await new Promise((resolve) => setTimeout(resolve, 5000)); // Adjust timeout as needed
         }
       } catch (error) {
         console.error("Error checking run status:", error.message);
-        // Handle error or retry logic as needed
-        // Example: throw error; // if you want to propagate the error up
       }
     }
   };
@@ -263,22 +245,11 @@ export const ContractProvider = ({ children }) => {
           gas: gasEstimate,
         });
 
+      setMessage(messagesResponse);
+
       console.log("Messages Response:", messagesResponse);
 
-      // Process messagesResponse to create an object with response1, response2, etc.
-      const responseObject = {};
-      let responseCount = 1;
-
-      messagesResponse.forEach((message, index) => {
-        if (message.role === "assistant") {
-          responseObject[`response${responseCount}`] = message.content;
-          responseCount++;
-        }
-      });
-
-      console.log("Processed Responses:", responseObject);
-
-      return responseObject;
+      return messagesResponse;
     } catch (error) {
       console.error("Error fetching new messages:", error.message);
       return {};
@@ -300,6 +271,9 @@ export const ContractProvider = ({ children }) => {
         cid,
         canProceed,
         isFileUpload,
+        isGenerating,
+        isResume,
+        message,
       }}
     >
       {children}

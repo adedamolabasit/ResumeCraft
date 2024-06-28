@@ -151,10 +151,9 @@ contract ResumeCraftAgent {
             run.responsesCount++;
 
             if (run.responsesCount == 1) {
-                // Prompt to add necessary fonts, color, layout for PDF import
                 Message memory newMessage;
                 newMessage
-                    .content = "Please convert the generated resume into a single-page HTML and CSS resume format. The resume should have a professional layout with fonts, colors, and a beautiful background that follows ATS (Applicant Tracking System) standards. Ensure the design is visually appealing, easy to read, and highlights the key sections such as contact information, professional summary, skills, experience, education, and any other relevant sections. Include custom styles to enhance the overall presentation while maintaining compatibility with ATS.";
+                    .content = "Please generate a cover letter based on the provided job description. The cover letter should highlight my suitability for the position, emphasizing my relevant skills and experiences. Include a compelling introduction, detailed body paragraphs that align my qualifications with the job requirements, and a strong conclusion with a clear call to action. It should include necessary tags to make the display appealing as a professional PDF or DOCX file.";
                 newMessage.role = "user";
                 run.messages.push(newMessage);
                 IOracle(oracleAddress).createOpenAiLlmCall(runId, config);
@@ -162,25 +161,7 @@ contract ResumeCraftAgent {
             } else if (run.responsesCount == 2) {
                 Message memory newMessage;
                 newMessage
-                    .content = "Please generate a cover letter based on the provided job description. The cover letter should highlight my suitability for the position, emphasizing my relevant skills and experiences. Include a compelling introduction, detailed body paragraphs that align my qualifications with the job requirements, and a strong conclusion with a clear call to action.";
-                newMessage.role = "user";
-                run.messages.push(newMessage);
-                IOracle(oracleAddress).createOpenAiLlmCall(runId, config);
-                return;
-            }
-             else if (run.responsesCount == 3) {
-                Message memory newMessage;
-                newMessage
-                    .content = "Please analyze the key points in the initial resume and provide the percentage of experience match to the job description to determine if the candidate is a good fit for the job. Include any relevant insights and summaries. The specific result should follow this format: analysis:";
-                newMessage.role = "user";
-                run.messages.push(newMessage);
-                IOracle(oracleAddress).createOpenAiLlmCall(runId, config);
-                return;
-            }
-             else if (run.responsesCount == 4) {
-                Message memory newMessage;
-                newMessage
-                    .content = "Please analyze the changes made between the initial resume and the newly generated tailored resume. Provide a percentage of how the new resume was tailored to the job description, highlighting specific changes and improvements. The specific result should follow this format: changes analysis:";
+                    .content = "Please analyze the changes made between the initial resume and the newly generated tailored resume. Provide a percentage of how the new resume was tailored to the job description, highlighting specific changes and improvements. It should include necessary tags to make the display appealing as a professional PDF or DOCX file.";
                 newMessage.role = "user";
                 run.messages.push(newMessage);
                 IOracle(oracleAddress).createOpenAiLlmCall(runId, config);
