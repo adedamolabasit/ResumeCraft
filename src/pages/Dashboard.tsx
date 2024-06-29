@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Navbar from "../components/Common/Navbar";
 import Footer from "../components/Common/Footer";
 import UploadResume from "../components/Dashboard/UploadResume";
@@ -9,6 +9,8 @@ import { uploadFileToServer } from "../services/api";
 import { useContract } from "../context/contractContext";
 import LogCard from "../components/Dashboard/LogCard";
 import InfoCard from "../components/Dashboard/InfoCard";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Dashboard = () => {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -18,11 +20,9 @@ const Dashboard = () => {
   const [canProceed, setCanProceed] = useState(false);
 
   const {
-    generateResumeContent,
     walletAdress,
     handleCid,
     handleLogsData,
-    cid,
     isFileUpload,
   } = useContract();
 
@@ -35,9 +35,9 @@ const Dashboard = () => {
       try {
         setIsUploading(true);
         handleLogsData(["Uploading files into AI Knowledge base"]);
-        await new Promise(resolve => setTimeout(resolve, 4000));
+        await new Promise((resolve) => setTimeout(resolve, 4000));
         handleLogsData(["please wait..."]);
-        await new Promise(resolve => setTimeout(resolve, 4000));
+        await new Promise((resolve) => setTimeout(resolve, 4000));
         handleLogsData(["Almost there..."]);
         const response = await uploadFileToServer(
           resumeFile,
@@ -70,6 +70,7 @@ const Dashboard = () => {
     }
   }, [isFileUpload, resumeFile, jobDescription]);
 
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -94,6 +95,7 @@ const Dashboard = () => {
         </div>
       </main>
       <Footer />
+      <ToastContainer autoClose={3000} />
     </div>
   );
 };

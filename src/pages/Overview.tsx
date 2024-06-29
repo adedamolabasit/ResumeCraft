@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FaCheckCircle,
   FaTimesCircle,
   FaCopy,
   FaDownload,
+  FaRobot,
 } from "react-icons/fa";
 import { BsFileEarmarkText } from "react-icons/bs";
 import { IoIosDocument } from "react-icons/io";
@@ -15,26 +16,30 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { Document, Packer, Paragraph, TextRun } from "docx";
 import { saveAs } from "file-saver";
+import { useNavigate } from "react-router-dom";
 
 const Overview = () => {
-  const { message } = useContract();
+  const { message, isResume } = useContract();
+  const navigate = useNavigate();
 
   const [rawResume, setRawResume] = useState<string>("");
   const [coverLetter, setCoverLetter] = useState<string>("");
   const [analysis1, setAnalysis1] = useState<string>("");
-  const [analysis2, setAnalysis2] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("resume");
   const [downloadFormat, setDownloadFormat] = useState<string>("pdf");
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [showDownloadOptions, setShowDownloadOptions] =
+    useState<boolean>(false);
+  const [showStickyDialog, setShowStickyDialog] = useState<boolean>(true);
+
 
   useEffect(() => {
     const fetchData = async () => {
-      if (message) {
+      try {
         const indices = [2, 4, 6];
         for (const index of indices) {
           if (index >= 0 && index < message.length) {
             let text = message[index];
-
-            // Extract text after the first \n\n and before the last \n\n
             let startIndex = text.indexOf("\n\n");
             let endIndex = text.lastIndexOf("\n\n");
             let processedText = "";
@@ -43,10 +48,8 @@ const Overview = () => {
               processedText = text.substring(startIndex + 2, endIndex).trim();
             }
 
-            // Convert Markdown to HTML using marked
             const html = await marked.parse(processedText);
 
-            // Update state based on index
             switch (index) {
               case 2:
                 setRawResume(html);
@@ -57,34 +60,58 @@ const Overview = () => {
               case 6:
                 setAnalysis1(html);
                 break;
-              case 8:
-                setAnalysis2(html);
-                break;
               default:
                 break;
             }
           }
         }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchData();
-  }, [message]);
+    if (!message) {
+      if (isResume) {
+        setIsLoading(true);
+      } else {
+        navigate("/dashboard");
+      }
+    } else {
+      fetchData();
+    }
+
+    const handleBeforeUnload = (event: any) => {
+      event.preventDefault();
+      event.returnValue =
+        "You have unsaved changes. Are you sure you want to leave?";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [message, isResume, navigate]);
 
   const handleCopy = (content: string, type: string) => {
     navigator.clipboard.writeText(content);
     alert(`${type} copied to clipboard!`);
   };
+ 
 
   const generatePDF = (htmlContent: string, filename: string) => {
     const element = document.createElement("div");
     element.innerHTML = htmlContent;
+    element.style.textAlign = "center";
     document.body.appendChild(element);
 
     const options = {
-      scale: 2, // Increase the scale for better quality
-      useCORS: true, // Enable CORS to allow loading of images from different domains
+      scale: 2,
+      useCORS: true,
     };
+
+   
 
     html2canvas(element, options).then((canvas) => {
       const imgData = canvas.toDataURL("image/png");
@@ -98,7 +125,11 @@ const Overview = () => {
     });
   };
 
-  const handleDownload = (content: string, filename: string, format: string) => {
+  const handleDownload = (
+    content: string,
+    filename: string,
+    format: string
+  ) => {
     if (format === "pdf") {
       generatePDF(content, `${filename}.pdf`);
     } else if (format === "docx") {
@@ -111,6 +142,7 @@ const Overview = () => {
             properties: {},
             children: [
               new Paragraph({
+                alignment: "center",
                 children: [new TextRun(textContent)],
               }),
             ],
@@ -123,39 +155,6 @@ const Overview = () => {
       });
     }
   };
-
-  const atsStandards = [
-    {
-      id: 1,
-      icon: <FaCheckCircle className="text-green-500" />,
-      text: "Optimized with relevant keywords",
-    },
-    {
-      id: 2,
-      icon: <FaCheckCircle className="text-green-500" />,
-      text: "Formatted for ATS compatibility",
-    },
-    {
-      id: 3,
-      icon: <FaCheckCircle className="text-green-500" />,
-      text: "Clean and professional layout",
-    },
-    {
-      id: 4,
-      icon: <FaTimesCircle className="text-red-500" />,
-      text: "No graphics or images",
-    },
-    {
-      id: 5,
-      icon: <BsFileEarmarkText className="text-blue-500" />,
-      text: "Text-based format",
-    },
-    {
-      id: 6,
-      icon: <IoIosDocument className="text-blue-500" />,
-      text: "PDF format",
-    },
-  ];
 
   const switchTab = (tab: string) => {
     setActiveTab(tab);
@@ -217,43 +216,59 @@ const Overview = () => {
                     <FaDownload
                       className="text-blue-500 cursor-pointer"
                       onClick={() =>
-                        handleDownload(
-                          rawResume,
-                          "resume",
-                          downloadFormat
-                        )
+                        setShowDownloadOptions(!showDownloadOptions)
                       }
                     />
-                    <div className="absolute right-0 mt-2 w-56 origin-top-right bg-white border border-gray-200 rounded-md shadow-lg">
-                      <div className="py-1" role="menu">
-                        <button
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => setDownloadFormat("pdf")}
-                        >
-                          Download as PDF
-                        </button>
-                        <button
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => setDownloadFormat("docx")}
-                        >
-                          Download as DOCX
-                        </button>
+                    {showDownloadOptions && (
+                      <div className="absolute right-0 mt-2 w-56 origin-top-right bg-white border border-gray-200 rounded-md shadow-lg">
+                        <div className="py-1" role="menu">
+                          <button
+                            className={`block px-4 py-2 text-sm ${
+                              downloadFormat === "pdf"
+                                ? "text-blue-700 font-bold"
+                                : "text-gray-700 hover:bg-gray-100"
+                            }`}
+                            onClick={() => {
+                              setDownloadFormat("pdf");
+                              handleDownload(rawResume, "resume", "pdf");
+                            }}
+                          >
+                            Download as PDF
+                          </button>
+                          <button
+                            className={`block px-4 py-2 text-sm ${
+                              downloadFormat === "docx"
+                                ? "text-blue-700 font-bold"
+                                : "text-gray-700 hover:bg-gray-100"
+                            }`}
+                            onClick={() => {
+                              setDownloadFormat("docx");
+                              handleDownload(rawResume, "resume", "docx");
+                            }}
+                          >
+                            Download as DOCX
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
-                <div className="resume-content text-center">
+                {isLoading ? (
+                  <div className="flex justify-center items-center h-full">
+                    <div className="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-32 w-32"></div>
+                  </div>
+                ) : (
                   <div
-                    className="text-gray-700 leading-relaxed"
+                    className="resume-content text-center"
                     dangerouslySetInnerHTML={{ __html: rawResume }}
                   />
-                </div>
+                )}
               </div>
             )}
             {activeTab === "cover_letter" && (
               <div
                 className="bg-white rounded-lg shadow-lg p-6 w-full mx-20"
-                style={{ width: "60vw", height: "200vh" }}
+                style={{ width: "60vw", height: "300vh" }}
               >
                 <div className="flex justify-between items-center mb-4">
                   <FaCopy
@@ -264,88 +279,98 @@ const Overview = () => {
                     <FaDownload
                       className="text-blue-500 cursor-pointer"
                       onClick={() =>
-                        handleDownload(
-                          coverLetter,
-                          "cover_letter",
-                          downloadFormat
-                        )
+                        setShowDownloadOptions(!showDownloadOptions)
                       }
                     />
-                    <div className="absolute right-0 mt-2 w-56 origin-top-right bg-white border border-gray-200 rounded-md shadow-lg">
-                      <div className="py-1" role="menu">
-                        <button
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => setDownloadFormat("pdf")}
-                        >
-                          Download as PDF
-                        </button>
-                        <button
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => setDownloadFormat("docx")}
-                        >
-                          Download as DOCX
-                        </button>
+                    {showDownloadOptions && (
+                      <div className="absolute right-0 mt-2 w-56 origin-top-right bg-white border border-gray-200 rounded-md shadow-lg">
+                        <div className="py-1" role="menu">
+                          <button
+                            className={`block px-4 py-2 text-sm ${
+                              downloadFormat === "pdf"
+                                ? "text-blue-700 font-bold"
+                                : "text-gray-700 hover:bg-gray-100"
+                            }`}
+                            onClick={() => {
+                              setDownloadFormat("pdf");
+                              handleDownload(
+                                coverLetter,
+                                "cover_letter",
+                                "pdf"
+                              );
+                            }}
+                          >
+                            Download as PDF
+                          </button>
+                          <button
+                            className={`block px-4 py-2 text-sm ${
+                              downloadFormat === "docx"
+                                ? "text-blue-700 font-bold"
+                                : "text-gray-700 hover:bg-gray-100"
+                            }`}
+                            onClick={() => {
+                              setDownloadFormat("docx");
+                              handleDownload(
+                                coverLetter,
+                                "cover_letter",
+                                "docx"
+                              );
+                            }}
+                          >
+                            Download as DOCX
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
-                <div className="cover-letter-content text-center">
+                {isLoading ? (
+                  <div className="flex justify-center items-center h-full">
+                    <div className="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-32 w-32"></div>
+                  </div>
+                ) : (
                   <div
-                    className="text-gray-700 leading-relaxed"
+                    className="cover-letter-content text-center"
                     dangerouslySetInnerHTML={{ __html: coverLetter }}
                   />
-                </div>
+                )}
               </div>
             )}
             {activeTab === "ats_analysis" && (
-              <div className="ats-analysis-content text-center">
-                <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                  ATS Standards and Changes
-                </h3>
-                <table className="table-auto w-full text-left mb-4">
-                  <thead>
-                    <tr>
-                      <th className="px-4 py-2">Status</th>
-                      <th className="px-4 py-2">Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {atsStandards.map((item) => (
-                      <tr key={item.id}>
-                        <td className="border px-4 py-2">{item.icon}</td>
-                        <td className="border px-4 py-2">{item.text}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {analysis1 && (
-                  <div>
-                    <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                      Analysis 1
-                    </h3>
-                    <div
-                      className="text-gray-700 leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: analysis1 }}
-                    />
-                  </div>
-                )}
-                {analysis2 && (
-                  <div>
-                    <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                      Analysis 2
-                    </h3>
-                    <div
-                      className="text-gray-700 leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: analysis2 }}
-                    />
-                  </div>
-                )}
+              <div
+                className="bg-white rounded-lg shadow-lg p-6 w-full mx-20 overflow-y-scroll"
+                style={{ width: "60vw", maxHeight: "400vh", overflowY: "auto" }}
+              >
+                <h3 className="text-xl font-bold mb-4">ATS Analysis</h3>
+                <div dangerouslySetInnerHTML={{ __html: analysis1 }} />
               </div>
             )}
           </div>
         </div>
       </section>
 
+      {showStickyDialog && (
+        <div className="fixed bottom-0 right-0 m-4 bg-yellow-200 text-yellow-800 p-4 rounded-lg shadow-lg text-right z-50 flex items-center max-w-lg gap-2">
+          <div className="flex flex-col items-center ">
+            <button
+              className="ml-4 px-4 py-2 bg-yellow-300 text-yellow-900 rounded"
+              onClick={() => setShowStickyDialog(false)}
+            >
+              Close
+            </button>
+          </div>
+          <div className="w-full">
+            <div className="flex gap-2 justify-end items-center">
+              <FaRobot className="text-yellow-800 mr-2" />
+              <p className="font-bold">Attention!</p>
+            </div>
+
+            <p>Please download your resume and cover letter before navigating away or refreshing the page to avoid losing your generated files.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Your Footer component */}
       <Footer />
     </div>
   );

@@ -1,13 +1,9 @@
-import { useEffect, useState } from "react";
-import { useContract } from "../../context/contractContext";
 import { FaCheckCircle } from "react-icons/fa";
 
 const JobDescription: React.FC<any> = ({
   onDescriptionChange,
   jobDescription,
 }) => {
-  const { canProceed } = useContract();
-  const [isJobDesc, setIsJobDesc] = useState(false);
 
   return (
     <div className="h-full mb-4">

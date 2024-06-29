@@ -1,9 +1,8 @@
-import React, { useState } from "react";
+import React from "react";
 import { useContract } from "../../context/contractContext";
 
 const LogCard: React.FC = () => {
   const { logs } = useContract();
-  const [loading, setLoading] = useState(true);
 
   return (
     <div className="bg-black text-white p-4 rounded-lg shadow-lg h-full flex flex-col">

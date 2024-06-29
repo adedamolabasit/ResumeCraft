@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useContract } from "../../context/contractContext";
 
 const GeneratedResume: React.FC<any> = ({ content }) => {

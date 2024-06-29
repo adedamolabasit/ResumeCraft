@@ -1,12 +1,13 @@
-import { useState, useContext, createContext, useEffect } from "react";
+import React, { useState, useContext, createContext, useEffect } from "react";
 import Web3 from "web3";
+import { toast } from "react-toastify";
 import abi from "../contractFIle/ResumeCraftAgent.json";
 
 const ContractContext = createContext();
 
 export const ContractProvider = ({ children }) => {
   const [walletAddress, setWalletAddress] = useState(
-    localStorage.getItem("walletAddress")
+    localStorage.getItem("walletAddress") || null
   );
   const [contractInstance, setContractInstance] = useState(null);
   const [runId, setRunId] = useState(null);
@@ -17,43 +18,22 @@ export const ContractProvider = ({ children }) => {
   const [resumeData, setResumeData] = useState({});
   const [isResume, setIsResume] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [message, setMessage] = useState();
-
+  const [message, setMessage] = useState("");
   const web3 = new Web3(window.ethereum);
-  const contractAddress = "0x3Ab2548b286ac591EDDA2b1814985a478B217517";
+  const contractAddress = "0x35db88B40976489946d1185AF7Dd2c0AFf3DBA3C";
 
-  useEffect(() => {
-    const fetchMessages = async () => {
-      const resume = await getNewMessages(2);
-      console.log(resume);
-      setResumeData({
-        data1: resume.response2, 
-        data2: resume.response4, 
-        data3: resume.response6
-      });
-      console.log(resumeData, "loe");
-    };
-
-    fetchMessages();
-  }, []);
-
-  useEffect(() => {
-    const processResume = async () => {
-      if (cid) {
-        try {
-          const resumeFileCid = await addResumeToKnowledgeBase(cid);
-          if (resumeFileCid !== "" && cid) {
-            setCanProceed(true);
-          }
-          console.log((resumeFileCid !== "") & cid);
-        } catch (error) {
-          console.error("Error adding resume to knowledge base:", error);
-        }
-      }
-    };
-
-    processResume();
-  }, [cid]);
+  const handleAccountsChanged = (accounts) => {
+    if (accounts.length > 0) {
+      const selectedAccount = accounts[0];
+      setWalletAddress(selectedAccount);
+      localStorage.setItem("walletAddress", selectedAccount);
+      toast.info(`Wallet connected: ${selectedAccount}`);
+    } else {
+      setWalletAddress(null);
+      localStorage.removeItem("walletAddress");
+      toast.info("Wallet disconnected");
+    }
+  };
 
   useEffect(() => {
     const initializeContract = async () => {
@@ -68,7 +48,57 @@ export const ContractProvider = ({ children }) => {
     };
 
     initializeContract();
-  }, [contractAddress]);
+
+    // Cleanup function to remove event listener
+    return () => {
+      if (window.ethereum && typeof window.ethereum.removeListener === "function") {
+        window.ethereum.removeListener("accountsChanged", handleAccountsChanged);
+      }
+    };
+  }, [contractAddress]); // Include contractAddress as dependency for reinitialization
+
+  useEffect(() => {
+    // Listen for wallet address changes
+    if (window.ethereum) {
+      window.ethereum.on("accountsChanged", handleAccountsChanged);
+    }
+
+    return () => {
+      if (window.ethereum && typeof window.ethereum.removeListener === "function") {
+        window.ethereum.removeListener("accountsChanged", handleAccountsChanged);
+      }
+    };
+  }, []); // Empty dependency array ensures this effect runs only once
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      const resume = await getNewMessages(2);
+      setResumeData({
+        data1: resume.response2,
+        data2: resume.response4,
+        data3: resume.response6,
+      });
+    };
+
+    fetchMessages();
+  }, []);
+
+  useEffect(() => {
+    const processResume = async () => {
+      if (cid) {
+        try {
+          const resumeFileCid = await addResumeToKnowledgeBase(cid);
+          if (resumeFileCid !== "" && cid) {
+            setCanProceed(true);
+          }
+        } catch (error) {
+          console.error("Error adding resume to knowledge base:", error);
+        }
+      }
+    };
+
+    processResume();
+  }, [cid]);
 
   const handleCid = (cid) => {
     setCid(cid);
@@ -86,6 +116,7 @@ export const ContractProvider = ({ children }) => {
         const selectedAccount = accounts[0];
         setWalletAddress(selectedAccount);
         localStorage.setItem("walletAddress", selectedAccount);
+        toast.success(`Wallet connected: ${selectedAccount}`);
       } catch (error) {
         console.error("Error connecting to wallet:", error);
       }
@@ -95,10 +126,18 @@ export const ContractProvider = ({ children }) => {
   };
 
   const disconnectWallet = async () => {
-    if (web3.currentProvider && web3.currentProvider.close) {
-      await web3.currentProvider.close();
-      setWalletAddress(null);
-      localStorage.removeItem("walletAddress");
+    try {
+      if (window.ethereum && window.ethereum.isMetaMask) {
+        await window.ethereum.request({ method: 'wallet_requestPermissions' });
+        await window.ethereum.close();
+        setWalletAddress(null);
+        localStorage.removeItem('walletAddress'); 
+        toast.info('Wallet disconnected');
+      } else {
+        console.error('No compatible wallet provider detected');
+      }
+    } catch (error) {
+      console.error('Error disconnecting wallet:', error);
     }
   };
 
@@ -153,7 +192,6 @@ export const ContractProvider = ({ children }) => {
 
   const addResumeToKnowledgeBase = async (cid) => {
     setIsResume(false);
-    console.log(cid, "down");
     if (!contractInstance) {
       console.error("Contract instance is not available");
       return;
@@ -161,8 +199,6 @@ export const ContractProvider = ({ children }) => {
 
     try {
       const gasPrice = await web3.eth.getGasPrice();
-      console.log("Gas Price:", gasPrice);
-
       const gasEstimate = await contractInstance.methods
         .setKnowledgeBaseCid(cid)
         .estimateGas({ from: walletAddress });
@@ -177,7 +213,7 @@ export const ContractProvider = ({ children }) => {
       if (tx && tx.blockHash && tx.blockNumber && tx.contractAddress) {
         setIsFileUpload(true);
         handleLogsData([
-          "Successfull",
+          "Successful",
           tx.transactionHash,
           tx.blockNumber,
           tx.contractAddress,
@@ -187,7 +223,7 @@ export const ContractProvider = ({ children }) => {
         console.error("Incomplete transaction response:", tx);
       }
 
-      return tx; 
+      return tx;
     } catch (error) {
       console.error("Error sending transaction:", error.message);
       return error;
@@ -196,26 +232,20 @@ export const ContractProvider = ({ children }) => {
 
   const checkRunStatusAndFetchMessages = async (runId) => {
     let isFinished = false;
-    const message = getNewMessages(runId);
-    console.log(`Fetching messages for runId ${runId}`, message);
 
     while (!isFinished) {
-      handleLogsData(["fetching..."]);
-
       try {
         isFinished = await contractInstance.methods
           .isRunFinished(runId)
           .call({ from: walletAddress });
 
-        console.log(`Run ${runId} is finished:`, isFinished);
-
         if (isFinished) {
           setIsResume(true);
           setIsGenerating(false);
-          const message = getNewMessages(runId);
-          console.log(`Fetching messages for runId ${runId}`);
+          const messagesResponse = await getNewMessages(runId);
+          setMessage(messagesResponse);
         } else {
-          await new Promise((resolve) => setTimeout(resolve, 5000)); // Adjust timeout as needed
+          await new Promise((resolve) => setTimeout(resolve, 5000));
         }
       } catch (error) {
         console.error("Error checking run status:", error.message);
@@ -230,9 +260,6 @@ export const ContractProvider = ({ children }) => {
     }
 
     try {
-      const gasPrice = await web3.eth.getGasPrice();
-      console.log("Gas Price:", gasPrice);
-
       const gasEstimate = await contractInstance.methods
         .getMessageHistoryContents(runId)
         .estimateGas({ from: walletAddress });
@@ -274,6 +301,7 @@ export const ContractProvider = ({ children }) => {
         isGenerating,
         isResume,
         message,
+        walletAddress,
       }}
     >
       {children}

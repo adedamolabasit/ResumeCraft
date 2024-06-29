@@ -5,12 +5,32 @@ import Footer from "../components/Common/Footer";
 import { motion } from "framer-motion";
 import { FaArrowRight, FaRobot } from "react-icons/fa";
 import AnimatedButton from "../components/Common/AnimatedButton";
+import RobotImage from "../assets/Robot.jpg";
 
 const Home = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <section className="flex-grow flex items-center justify-center bg-gradient-to-r from-blue-400 to-purple-600 relative overflow-hidden">
+        <div
+          className="w-1/2 h-full bg-cover bg-center absolute left-8 top-0 flex items-center justify-center text-center text-white"
+        >
+          <div className="bg-black bg-opacity-50 p-8 rounded-lg">
+            <h1 className="text-4xl font-bold mb-4">
+              Welcome to ResumeCraft
+            </h1>
+            <p className="text-lg">
+              We empower your job search with AI-driven resume optimization and
+              job fit analysis.
+            </p>
+            <p className="mt-4 text-sm">
+              Built on Galadriel Blockchain, the first Layer 1 platform for AI,
+              ensuring secure and efficient processing of your data and
+              applications.
+            </p>
+          </div>
+        </div>
+
         <motion.div
           initial={{ opacity: 0, scale: 0.8, rotate: -20 }}
           animate={{ opacity: 1, scale: 1, rotate: 0 }}
@@ -52,7 +72,7 @@ const Home = () => {
         <div className="relative z-10 max-w-4xl mx-auto px-6 lg:px-0 text-center text-white h-72"></div>
       </section>
 
-      <section className="bg-gray-100 py-12 opacity-">
+      <section className="bg-gray-100 py-12">
         <div className="container mx-auto text-center">
           <h2 className="text-3xl font-bold text-gray-800 mb-8">
             How We Can Help You
@@ -68,6 +88,7 @@ const Home = () => {
                 analyzes keywords and formats to optimize your chances.
               </p>
             </div>
+            
             <div className="bg-white rounded-lg shadow-lg p-6">
               <FaArrowRight className="text-4xl text-blue-500 mb-4 mx-auto" />
               <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -78,19 +99,21 @@ const Home = () => {
                 Receive insights and recommendations for improvement.
               </p>
             </div>
+
             <div className="bg-white rounded-lg shadow-lg p-6">
               <FaArrowRight className="text-4xl text-blue-500 mb-4 mx-auto" />
               <h3 className="text-xl font-bold text-gray-900 mb-2">
-                ATS Optimization
+                Cover Letter Generation
               </h3>
               <p className="text-gray-700 leading-relaxed">
-                Ensure your resume passes through Applicant Tracking Systems.
-                Our templates and formats are designed to meet ATS requirements.
+                Automatically generate compelling cover letters tailored to each
+                job application, highlighting your skills and experience.
               </p>
             </div>
           </div>
         </div>
       </section>
+
       <section className="bg-gradient-to-r from-blue-400 to-purple-600 py-12">
         <div className="container mx-auto text-center">
           <h2 className="text-3xl font-bold text-white mb-8">

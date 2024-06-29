@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
-// Uncomment this line to use console.log
-// import "hardhat/console.sol";
+
 import "./interfaces/IOracle.sol";
 
 contract ResumeCraftAgent {
@@ -42,18 +41,18 @@ contract ResumeCraftAgent {
 
         config = IOracle.OpenAiRequest({
             model: "gpt-4-turbo-preview",
-            frequencyPenalty: 21, // > 20 for null
-            logitBias: "", // empty str for null
-            maxTokens: 1000, // 0 for null
-            presencePenalty: 21, // > 20 for null
+            frequencyPenalty: 21,
+            logitBias: "",
+            maxTokens: 1000,
+            presencePenalty: 21,
             responseFormat: '{"type":"text"}',
-            seed: 0, // null
-            stop: "", // null
-            temperature: 10, // Example temperature (scaled up, 10 means 1.0), > 20 means null
-            topP: 101, // Percentage 0-100, > 100 means null
+            seed: 0,
+            stop: "",
+            temperature: 10,
+            topP: 101,
             tools: '[{"type":"function","function":{"name":"web_search","description":"Search the internet","parameters":{"type":"object","properties":{"query":{"type":"string","description":"Search query"}},"required":["query"]}}},{"type":"function","function":{"name":"image_generation","description":"Generates an image using Dalle-2","parameters":{"type":"object","properties":{"prompt":{"type":"string","description":"Dalle-2 prompt to generate an image"}},"required":["prompt"]}}}]',
-            toolChoice: "auto", // "none" or "auto"
-            user: "" // null
+            toolChoice: "auto",
+            user: ""
         });
     }
 
@@ -161,7 +160,7 @@ contract ResumeCraftAgent {
             } else if (run.responsesCount == 2) {
                 Message memory newMessage;
                 newMessage
-                    .content = "Please analyze the changes made between the initial resume and the newly generated tailored resume. Provide a percentage of how the new resume was tailored to the job description, highlighting specific changes and improvements. It should include necessary tags to make the display appealing as a professional PDF or DOCX file.";
+                    .content = "Please analyze the differences between the initial resume and the newly generated tailored resume. Provide a percentage indicating how well the new resume matches the job description, highlighting specific changes and improvements. Also, write out the ATS-friendly practices that were followed in the new resume. Include necessary tags in a listed format to ensure the output is suitable for professional PDF or DOCX presentation.";
                 newMessage.role = "user";
                 run.messages.push(newMessage);
                 IOracle(oracleAddress).createOpenAiLlmCall(runId, config);
@@ -186,10 +185,9 @@ contract ResumeCraftAgent {
     function onOracleKnowledgeBaseQueryResponse(
         uint256 runId,
         string[] memory documents,
-        string memory /*errorMessage*/
+        string memory
     ) public onlyOracle {
         AgentRun storage run = agentRuns[runId];
-        // Retrieve the last user message
         require(
             keccak256(
                 abi.encodePacked(run.messages[run.messagesCount - 1].role)
@@ -197,27 +195,23 @@ contract ResumeCraftAgent {
             "No message to add context to"
         );
         Message storage lastMessage = run.messages[run.messagesCount - 1];
-        // Start with the original message content
+
         string memory newContent = lastMessage.content;
 
-        // Append "Relevant context:\n" only if there are documents
         if (documents.length > 0) {
             newContent = string(
                 abi.encodePacked(newContent, "\n\nRelevant context:\n")
             );
         }
 
-        // Iterate through the documents and append each to the newContent
         for (uint256 i = 0; i < documents.length; i++) {
             newContent = string(
                 abi.encodePacked(newContent, documents[i], "\n")
             );
         }
 
-        // Finally, set the lastMessage content to the newly constructed string
         lastMessage.content = newContent;
 
-        // Call LLM
         IOracle(oracleAddress).createOpenAiLlmCall(runId, config);
         emit AgentRunCreated(run.owner, runId);
     }

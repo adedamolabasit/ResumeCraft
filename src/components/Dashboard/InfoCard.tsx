@@ -17,15 +17,6 @@ const InfoCard: React.FC = () => {
   const navigate = useNavigate();
   const [generatingText, setGeneratingText] = useState("Please wait...");
 
-  //   // Placeholder function to simulate file generation
-  //   const handleGenerateResume = () => {
-  //     setIsGenerating(true);
-  //     // Simulate generation process
-  //     setTimeout(() => {
-  //       setIsGenerating(false);
-  //     }, 3000); // Placeholder duration for simulation
-  //   };
-
   useEffect(() => {
     if (isResume) {
       navigate("/overview");
@@ -46,7 +37,7 @@ const InfoCard: React.FC = () => {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, []); // Empty dependency array ensures this effect runs only once
+  }, []);
 
   return (
     <div className="bg-blue-100 text-blue-900 p-6 rounded-lg shadow-lg flex flex-col justify-center items-center h-full">
@@ -100,12 +91,6 @@ const InfoCard: React.FC = () => {
             <span className="self-start mt-2">{generatingText}</span>
           </div>
         )}
-        {/* <button
-          onClick={handleGenerateResume}
-          className="mt-4 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg focus:outline-none"
-        >
-          Generate Resume
-        </button> */}
       </div>
     </div>
   );
