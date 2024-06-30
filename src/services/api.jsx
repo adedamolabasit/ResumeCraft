@@ -5,7 +5,7 @@ export const uploadFileToServer = async (resumeFile, walletAddress, jobDescripti
 
   const formData = new FormData();
   formData.append("file", resumeFile);
-  formData.append("json_data", JSON.stringify({ address: walletAddress, job_description: jobDescription }));
+  formData.append("json_data", JSON.stringify({ address: "file", job_description: jobDescription }));
 
   try {
     const response = await axiosInstance.post("/upload/", formData, {
