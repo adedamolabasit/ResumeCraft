@@ -1,13 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  FaCheckCircle,
-  FaTimesCircle,
-  FaCopy,
-  FaDownload,
-  FaRobot,
-} from "react-icons/fa";
-import { BsFileEarmarkText } from "react-icons/bs";
-import { IoIosDocument } from "react-icons/io";
+import { FaCopy, FaDownload, FaRobot } from "react-icons/fa";
 import Navbar from "../components/Common/Navbar";
 import Footer from "../components/Common/Footer";
 import { useContract } from "../context/contractContext";
@@ -31,7 +23,6 @@ const Overview = () => {
   const [showDownloadOptions, setShowDownloadOptions] =
     useState<boolean>(false);
   const [showStickyDialog, setShowStickyDialog] = useState<boolean>(true);
-
 
   useEffect(() => {
     const fetchData = async () => {
@@ -98,7 +89,6 @@ const Overview = () => {
     navigator.clipboard.writeText(content);
     alert(`${type} copied to clipboard!`);
   };
- 
 
   const generatePDF = (htmlContent: string, filename: string) => {
     const element = document.createElement("div");
@@ -110,8 +100,6 @@ const Overview = () => {
       scale: 2,
       useCORS: true,
     };
-
-   
 
     html2canvas(element, options).then((canvas) => {
       const imgData = canvas.toDataURL("image/png");
@@ -365,7 +353,10 @@ const Overview = () => {
               <p className="font-bold">Attention!</p>
             </div>
 
-            <p>Please download your resume and cover letter before navigating away or refreshing the page to avoid losing your generated files.</p>
+            <p>
+              Please download your resume and cover letter before navigating
+              away or refreshing the page to avoid losing your generated files.
+            </p>
           </div>
         </div>
       )}

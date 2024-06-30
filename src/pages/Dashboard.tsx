@@ -9,8 +9,9 @@ import { uploadFileToServer } from "../services/api";
 import { useContract } from "../context/contractContext";
 import LogCard from "../components/Dashboard/LogCard";
 import InfoCard from "../components/Dashboard/InfoCard";
-import { toast, ToastContainer } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { FaRobot } from "react-icons/fa";
 
 const Dashboard = () => {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -18,13 +19,10 @@ const Dashboard = () => {
   const [generatedResume, setGeneratedResume] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [canProceed, setCanProceed] = useState(false);
+  const [showStickyDialog, setShowStickyDialog] = useState<boolean>(false);
 
-  const {
-    walletAdress,
-    handleCid,
-    handleLogsData,
-    isFileUpload,
-  } = useContract();
+  const { walletAddress, handleCid, handleLogsData, isFileUpload } =
+    useContract();
 
   const uploadFile = async () => {
     setCanProceed(false);
@@ -34,21 +32,23 @@ const Dashboard = () => {
       setJobDescription("");
       try {
         setIsUploading(true);
-        handleLogsData(["Uploading files into AI Knowledge base"]);
+        handleLogsData(["Initiating file upload to AI Knowledge Base..."]);
         await new Promise((resolve) => setTimeout(resolve, 4000));
-        handleLogsData(["please wait..."]);
+        handleLogsData(["Uploading files, please wait..."]);
         await new Promise((resolve) => setTimeout(resolve, 4000));
-        handleLogsData(["Almost there..."]);
+        handleLogsData(["Files almost uploaded..."]);
+        await new Promise((resolve) => setTimeout(resolve, 6000));
+        handleLogsData(["uploading..."]);
         const response = await uploadFileToServer(
           resumeFile,
-          walletAdress,
+          walletAddress,
           jobDescription
         );
         [response.message, response.output].forEach((item) => {
           handleLogsData([item]);
         });
 
-        handleLogsData(["Authorize Wallet..."]);
+        handleLogsData(["Please Authorize your wallet"]);
         handleCid(response.cid);
       } catch (err) {
         console.log("Error uploading file:", err);
@@ -68,8 +68,12 @@ const Dashboard = () => {
     if (resumeFile && jobDescription) {
       setCanProceed(true);
     }
-  }, [isFileUpload, resumeFile, jobDescription]);
-
+    if (walletAddress === null) {
+      setShowStickyDialog(true);
+    }else{
+      setShowStickyDialog(false);
+    }
+  }, [isFileUpload, resumeFile, jobDescription, walletAddress]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -93,6 +97,28 @@ const Dashboard = () => {
             {isUploading ? <LogCard /> : <InfoCard />}
           </div>
         </div>
+        {showStickyDialog && (
+          <div className="fixed bottom-0 right-0 m-4 bg-yellow-200 text-yellow-800 p-4 rounded-lg shadow-lg text-right z-50 flex items-center max-w-lg gap-2">
+            <div className="flex flex-col items-center ">
+              <button
+                className="ml-4 px-4 py-2 bg-yellow-300 text-yellow-900 rounded"
+                onClick={() => setShowStickyDialog(false)}
+              >
+                Close
+              </button>
+            </div>
+            <div className="w-full">
+              <div className="flex gap-2 justify-end items-center">
+                <FaRobot className="text-yellow-800 mr-2" />
+                <p className="font-bold">Attention!</p>
+              </div>
+              <p>
+                Please connect your wallet address before proceeding. Without a
+                connected wallet address, you will not be able to continue.
+              </p>
+            </div>
+          </div>
+        )}
       </main>
       <Footer />
       <ToastContainer autoClose={3000} />

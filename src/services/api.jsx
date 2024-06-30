@@ -5,7 +5,7 @@ export const uploadFileToServer = async (resumeFile, walletAddress, jobDescripti
 
   const formData = new FormData();
   formData.append("file", resumeFile);
-  formData.append("json_data", JSON.stringify({ address: "folder", job_description: jobDescription }));
+  formData.append("json_data", JSON.stringify({ address: walletAddress, job_description: jobDescription }));
 
   try {
     const response = await axiosInstance.post("/upload/", formData, {
@@ -16,6 +16,16 @@ export const uploadFileToServer = async (resumeFile, walletAddress, jobDescripti
     return response.data;
   } catch (error) {
     console.error("Error uploading file:", error);
+    throw error;
+  }
+};
+
+export const wakeServer = async () => {
+  try {
+    const response = await axiosInstance.get("/upload/wake");
+    return response.data;
+  } catch (error) {
+    console.error("Error waking up server:", error);
     throw error;
   }
 };

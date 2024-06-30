@@ -10,7 +10,7 @@ async function main() {
   }
 
   console.log("Oracle Address:", initialOracleAddress);
-  console.log("Knowledge Base CID:", systemPrompt);
+  console.log("System Prompt:", systemPrompt);
 
   const [deployer] = await ethers.getSigners();
   console.log("Deploying contract with the account:", deployer.address);
@@ -21,7 +21,7 @@ async function main() {
   console.log("Contract deployed to:", resumeCraftAgent);
 
   try {
-    console.log("startChat executed successfully");
+    console.log("ResumeCraftAgent Deployed successfully");
   } catch (error) {
     console.error("Error executing startChat:", error);
   }

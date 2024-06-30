@@ -1,11 +1,8 @@
 import React from "react";
-import { Link } from "react-router-dom";
 import Navbar from "../components/Common/Navbar";
 import Footer from "../components/Common/Footer";
 import { motion } from "framer-motion";
 import { FaArrowRight, FaRobot } from "react-icons/fa";
-import AnimatedButton from "../components/Common/AnimatedButton";
-import RobotImage from "../assets/Robot.jpg";
 
 const Home = () => {
   return (
@@ -119,9 +116,6 @@ const Home = () => {
           <h2 className="text-3xl font-bold text-white mb-8">
             Start Building Your Career Today
           </h2>
-          <Link to="/dashboard">
-            <AnimatedButton text="Get Started" onClick={() => {}} canProceed={true} />
-          </Link>
         </div>
       </section>
 

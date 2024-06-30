@@ -21,14 +21,18 @@ const InfoCard: React.FC = () => {
     if (isResume) {
       navigate("/overview");
     }
-  }, [isGenerating, isResume]);
+  }, [isGenerating, isResume, navigate]);
   useEffect(() => {
     let textIndex = 0;
-    const generatingTexts = [
-      "Please wait...",
-      "Hold on...",
-      "Almost there...",
+    const generatingTexts =  [
       "Generating resume...",
+      "Optimizing resume for ATS...",
+      "Tailoring resume content...",
+      "Galadriel is recognized as the first Level 1 AI.",
+      "Did you know? AI enhances resume tailoring to match job descriptions.",
+      "AI assists in creating personalized resumes efficiently.",
+      "Please be patient, the process won't take long.",
+      "Sit tight, resume generation is in progress.",
     ];
 
     const interval = setInterval(() => {
@@ -86,7 +90,7 @@ const InfoCard: React.FC = () => {
         {isGenerating && (
           <div className="flex flex-col items-center space-x-2 text-sm w-full">
             <div className="w-full h-5 bg-blue-500 rounded-full overflow-hidden relative">
-              <div className="h-full bg-blue-300 absolute left-0 animate-progress"></div>
+              <div className="h-full bg-blue-300 absolute left-0 animate-progress animate-pulse"></div>
             </div>
             <span className="self-start mt-2">{generatingText}</span>
           </div>

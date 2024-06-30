@@ -6,31 +6,26 @@ import abi from "../contractFIle/ResumeCraftAgent.json";
 const ContractContext = createContext();
 
 export const ContractProvider = ({ children }) => {
-  const [walletAddress, setWalletAddress] = useState(
-    localStorage.getItem("walletAddress") || null
-  );
+  const [walletAddress, setWalletAddress] = useState(null);
   const [contractInstance, setContractInstance] = useState(null);
-  const [runId, setRunId] = useState(null);
   const [cid, setCid] = useState(null);
   const [logs, setLogs] = useState(["loading.."]);
   const [canProceed, setCanProceed] = useState(false);
   const [isFileUpload, setIsFileUpload] = useState(false);
-  const [resumeData, setResumeData] = useState({});
   const [isResume, setIsResume] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [message, setMessage] = useState("");
   const web3 = new Web3(window.ethereum);
-  const contractAddress = "0x35db88B40976489946d1185AF7Dd2c0AFf3DBA3C";
+
+  const contractAddress = process.env.REACT_APP_CONTRACT_ADDRESS;
 
   const handleAccountsChanged = (accounts) => {
     if (accounts.length > 0) {
       const selectedAccount = accounts[0];
       setWalletAddress(selectedAccount);
-      localStorage.setItem("walletAddress", selectedAccount);
       toast.info(`Wallet connected: ${selectedAccount}`);
     } else {
       setWalletAddress(null);
-      localStorage.removeItem("walletAddress");
       toast.info("Wallet disconnected");
     }
   };
@@ -49,16 +44,14 @@ export const ContractProvider = ({ children }) => {
 
     initializeContract();
 
-    // Cleanup function to remove event listener
     return () => {
       if (window.ethereum && typeof window.ethereum.removeListener === "function") {
         window.ethereum.removeListener("accountsChanged", handleAccountsChanged);
       }
     };
-  }, [contractAddress]); // Include contractAddress as dependency for reinitialization
+  }, [contractAddress]); 
 
   useEffect(() => {
-    // Listen for wallet address changes
     if (window.ethereum) {
       window.ethereum.on("accountsChanged", handleAccountsChanged);
     }
@@ -68,20 +61,8 @@ export const ContractProvider = ({ children }) => {
         window.ethereum.removeListener("accountsChanged", handleAccountsChanged);
       }
     };
-  }, []); // Empty dependency array ensures this effect runs only once
+  }, []); 
 
-  useEffect(() => {
-    const fetchMessages = async () => {
-      const resume = await getNewMessages(2);
-      setResumeData({
-        data1: resume.response2,
-        data2: resume.response4,
-        data3: resume.response6,
-      });
-    };
-
-    fetchMessages();
-  }, []);
 
   useEffect(() => {
     const processResume = async () => {
@@ -115,7 +96,6 @@ export const ContractProvider = ({ children }) => {
         const accounts = await web3.eth.getAccounts();
         const selectedAccount = accounts[0];
         setWalletAddress(selectedAccount);
-        localStorage.setItem("walletAddress", selectedAccount);
         toast.success(`Wallet connected: ${selectedAccount}`);
       } catch (error) {
         console.error("Error connecting to wallet:", error);
@@ -176,6 +156,7 @@ export const ContractProvider = ({ children }) => {
         const runId = tx.events.AgentRunCreated.returnValues.runId;
 
         await checkRunStatusAndFetchMessages(runId);
+        setIsGenerating(true);
       } else {
         console.error(
           "AgentRunCreated event not found in transaction response:",
@@ -289,7 +270,6 @@ export const ContractProvider = ({ children }) => {
         connectToWallet,
         disconnectWallet,
         generateResumeContent,
-        runId,
         getNewMessages,
         addResumeToKnowledgeBase,
         handleCid,
